@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* select all nested element of html tag has dark class by using @custom-variant */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Default ligth mode */
+  --color-primary: #ffffff;
+  --color-secondary: #000000;
+}
+
+:root {
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+  /* override on light mode theme variabels by dark mode theme variables use @variant */
+  @variant dark {
+    --color-primary: #000000;
+    --color-secondary: #f4f4f8;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-primary);
+    color: var(--color-secondary);
+    @apply transition-colors duration-700;
+  }
+}
