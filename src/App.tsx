@@ -36,6 +36,9 @@ import { ResizeComponent } from './pages/useSyncExternalStore/task-1/ResizeCompo
 import { OnlineComponent } from './pages/useSyncExternalStore/task-2/OnlineComponent'
 import { CounterComponent } from './pages/useSyncExternalStore/task-3/CounterComponent'
 import { HybirdCounterComponent } from './pages/useSyncExternalStore/task-4/HybirdCounterComponent'
+import { TooltipComponent } from './pages/hook-use-layout-effect/task-1/TooltipComponent'
+import { AdvertisesBanner } from './pages/hook-use-layout-effect/task-2/AdvertisesBanner'
+import { HeaderComponent } from './pages/hook-use-layout-effect/task-2/HeaderComponent'
 
 function App({className}: {className: string}) {
   return (
@@ -108,6 +111,10 @@ function App({className}: {className: string}) {
       <div className='w-full h-10 bg-red-500'></div>
       <div className='w-full h-10 bg-red-500'></div>
       <HybirdCounterComponent />
+      <div className='w-full h-10 bg-red-500'></div>
+      <TooltipComponent />
+      <div className='w-full h-10 bg-red-500'></div>
+      <HeaderComponent/>
     </div>
     </>
   )
