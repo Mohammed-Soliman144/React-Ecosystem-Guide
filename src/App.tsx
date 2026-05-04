@@ -39,6 +39,10 @@ import { HybirdCounterComponent } from './pages/useSyncExternalStore/task-4/Hybi
 import { TooltipComponent } from './pages/hook-use-layout-effect/task-1/TooltipComponent'
 import { AdvertisesBanner } from './pages/hook-use-layout-effect/task-2/AdvertisesBanner'
 import { HeaderComponent } from './pages/hook-use-layout-effect/task-2/HeaderComponent'
+import { ParentGrid } from './pages/hook-use-deferred-value/task-1/ParentGrid'
+import { ProductsComponent } from './pages/hook-use-deferred-value/task-2/ProductsComponent'
+import { FormMainComponent } from './pages/hook-use-id/FormComponent'
+import { ProductsList } from './pages/react-api-use/task-1/ProductList'
 
 function App({className}: {className: string}) {
   return (
@@ -114,7 +118,15 @@ function App({className}: {className: string}) {
       <div className='w-full h-10 bg-red-500'></div>
       <TooltipComponent />
       <div className='w-full h-10 bg-red-500'></div>
-      <HeaderComponent/>
+      {/* <HeaderComponent/> */}
+      <div className='w-full h-10 bg-red-500'></div>
+      <ParentGrid/>
+      <div className='w-full h-10 bg-red-500'></div>
+      <ProductsComponent />
+      <div className='w-full h-10 bg-red-500'></div>
+      <FormMainComponent /> 
+      <div className='w-full h-10 bg-red-500'></div>
+      <ProductsList />
     </div>
     </>
   )
