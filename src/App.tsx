@@ -43,6 +43,7 @@ import { ParentGrid } from './pages/hook-use-deferred-value/task-1/ParentGrid'
 import { ProductsComponent } from './pages/hook-use-deferred-value/task-2/ProductsComponent'
 import { FormMainComponent } from './pages/hook-use-id/FormComponent'
 import { ProductsList } from './pages/react-api-use/task-1/ProductList'
+import { TestComponent } from './pages/custom-hook/test/TestComponent'
 
 function App({className}: {className: string}) {
   return (
@@ -126,7 +127,9 @@ function App({className}: {className: string}) {
       <div className='w-full h-10 bg-red-500'></div>
       <FormMainComponent /> 
       <div className='w-full h-10 bg-red-500'></div>
-      <ProductsList />
+      {/* <ProductsList /> */}
+      <div className='w-full h-10 bg-red-500'></div>
+      <TestComponent  />
     </div>
     </>
   )
