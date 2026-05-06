@@ -2,19 +2,74 @@ import { useState, useEffect } from "react"
 import { useToggle } from "../hooks/useToggle"
 import { useInput } from "../hooks/useInput"
 import { useDebouce } from "../hooks/useDebouce"
+import { useThrottle } from "../hooks/useThrottle"
+import { useClickOutside } from "../hooks/useClickOutside"
+import { useAsync } from "../hooks/useAsync"
+import { useFetch } from "../hooks/useFetch"
+import * as z from "zod"
+
+const commentsSchema = z.array(z.object({
+    postId: z.number(),
+    id: z.number(),
+    name: z.string(),
+    email: z.string(),
+    body: z.string()
+}))
 
 
+interface Users  {
+    id: number,
+    name: string,
+    username:string,
+    email: string,
+    address: {
+        street: string,
+        suite: string,
+        city: string,
+        zipcode: string,
+            geo: {
+                lat: string,
+                lng: string
+            }
+    }
+}
+
+const fetchUsers = async (): Promise<Array<Users>> => {
+    const res = await fetch("https://jsonplaceholder.typicode.com/users", {
+        method: "GET",
+        headers: {
+            "content-type": "application/json",
+        },
+    })
+    if(!res.ok)
+        throw new Error(`HTTP error status code ${res.status} and status text ${res.statusText}`)
+    return await res.json()
+}
 export const TestComponent = () => {
     
     const [openModal, handleOpenModal, setOpenModal, setCloseModal] = useToggle()
     const {handleChange: changeName, handleReset: resetName, ...name} = useInput()    
     const {handleChange: changeEmail, handleReset: resetEmail, ...email} = useInput()    
     const {handleChange: changePass, handleReset: resetPass, ...pass} = useInput()
+    const [width, setWidth] = useState(typeof window !== "undefined"? window.innerWidth : 0)
+    const handleThrottle = useThrottle(() => setWidth(window.innerWidth), 1000)
+    useEffect(()=> {   
+        window.addEventListener("resize", handleThrottle)
+        return () => window.removeEventListener("resize", handleThrottle)
+    }, [handleThrottle])
     const [search, setSearch] = useState("")
     const handleSearch = useDebouce((val) => {
         console.log(val)
     }, 1000)
+    
+    const [isOpen, setIsOpen] = useState(false)
+    const dropDownRef = useClickOutside<HTMLElement>(()=>setIsOpen(false))
 
+    const {data, error, isLoading, status, reset, execute} = useAsync(fetchUsers, false)
+    
+    const {data: commentsData, isLoading: isLoadingComments, error: errorComments, refetch} = useFetch("https://jsonplaceholder.typicode.com/comments", {method: "GET", headers: {"content-type": "application/json"}}, commentsSchema)
+
+    const signal = new AbortController()
     return <div className="container">
         {/* Test useToggle */}
         <section className="use-toggle">
@@ -60,5 +115,74 @@ export const TestComponent = () => {
                 }}/>
             </label>
         </form>
+        {/* Test useThrottle Custom Hook - handle Inifinite scroll, track window with */}
+        <section className="width">
+            <h2>{width}</h2>
+        </section>
+        {/* Test useClickOutside Custom Hook */}
+        <nav ref={dropDownRef} aria-label="Main Navigation">
+            <button onClick={() => setIsOpen(prev => !prev)} 
+                aria-expanded={isOpen}
+                aria-haspopup="true"
+                className="bg-red-500">
+                open Dropdow
+            </button>
+            <ul
+            style={{
+                visibility: isOpen? "visible" : "hidden",
+            }} >
+                <li>Home</li>
+                <li>Products</li>
+                <li>Services</li>
+                <li>Downloads</li>
+            </ul>
+        </nav>
+        {/* Test useAsync  */}
+        <section className="users">
+            <button type="button" onClick={execute}>Fetch users data</button>
+            <button type="button" onClick={reset}>reset</button>
+            {
+                status === "SUCCESS" &&
+                <ul>
+                    {
+                        data?.map(us => {
+                            return (
+                                <li key={us.id}>
+                                    <h2>{us.name} - {us.username}</h2>
+                                    <p>{us.address.city.concat(" - ", us.address.street)}</p>
+                                    <p>{us.email}</p>
+                                </li>
+                            )
+                        })
+                    }
+                </ul>
+            }
+            {
+                isLoading && status === "PENDING" &&
+                <p>loading users profile....</p>
+            }
+            {
+                error && status === "ERROR" &&
+                <p>{error.message}</p>
+            }
+        </section>
+        {/* useFetch Custom Hook */}
+        <section className="commments">
+            <button type="button" onClick={() => refetch(signal.signal)}>Fetch Data Comments</button>
+            {
+                isLoadingComments && <p>Loading Comments...</p>
+            }
+            {
+                errorComments && 
+                <p>Something went wrong, please try again {errorComments.message}</p>
+            }
+            {
+                commentsData?.map(com=> {
+                    return (
+                        <p key={com.id}>{com.body}</p>
+                    )
+                })
+            }
+        </section>
     </div>
 }
