@@ -7,15 +7,36 @@ import { useClickOutside } from "../hooks/useClickOutside"
 import { useAsync } from "../hooks/useAsync"
 import { useFetch } from "../hooks/useFetch"
 import * as z from "zod"
+import { useLocalStorage } from "../hooks/useLocalStorage"
 
 const commentsSchema = z.array(z.object({
-    postId: z.number(),
     id: z.number(),
-    name: z.string(),
+    name:z.string(),
+    username:z.string(),
     email: z.string(),
-    body: z.string()
-}))
+    address: z.object({
+        street: z.string(),
+        suite: z.string(),
+        city: z.string(),
+        zipcode: z.string(),
+        geo: z.object({
+            lat: z.string(),
+            lng: z.string()
+        }).loose()
+    }).loose(),
+    phone: z.string(),
+    website: z.string(),
+    company: z.object({
+      name: z.string(),
+      catchPhrase: z.string(),
+      bs: z.string(),
+    }).loose()
+}).loose())
 
+
+const themeSchema = z.enum(["LIGHT", "DARK"])
+
+// type themeType = z.infer<typeof themeSchema>
 
 interface Users  {
     id: number,
@@ -67,9 +88,17 @@ export const TestComponent = () => {
 
     const {data, error, isLoading, status, reset, execute} = useAsync(fetchUsers, false)
     
-    const {data: commentsData, isLoading: isLoadingComments, error: errorComments, refetch} = useFetch("https://jsonplaceholder.typicode.com/comments", {method: "GET", headers: {"content-type": "application/json"}}, commentsSchema)
+    const {data: commentsData, isLoading: isLoadingComments, error: errorComments, refetch, success, message} = useFetch("https://jsonplaceholder.typicode.com/users", {method: "GET", headers: {"content-type": "application/json"}}, commentsSchema)
 
-    const signal = new AbortController()
+    const [theme, setTheme] = useLocalStorage("TestTheme", "LIGHT", themeSchema)
+
+
+    const toggleTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault()
+        setTheme(prev => prev === "LIGHT"? "DARK" : "LIGHT")
+    }
+
+    // const signal = new AbortController()
     return <div className="container">
         {/* Test useToggle */}
         <section className="use-toggle">
@@ -162,27 +191,35 @@ export const TestComponent = () => {
                 <p>loading users profile....</p>
             }
             {
-                error && status === "ERROR" &&
-                <p>{error.message}</p>
+                status === "ERROR" &&
+                <p>{error?.message}</p>
             }
         </section>
         {/* useFetch Custom Hook */}
         <section className="commments">
-            <button type="button" onClick={() => refetch(signal.signal)}>Fetch Data Comments</button>
+            <button type="button" onClick={refetch}>Fetch Data Comments</button>
             {
-                isLoadingComments && <p>Loading Comments...</p>
+                !isLoadingComments && <p>Loading Comments...</p>
             }
             {
-                errorComments && 
+                !success && message?.includes("error") && errorComments &&
                 <p>Something went wrong, please try again {errorComments.message}</p>
             }
             {
                 commentsData?.map(com=> {
                     return (
-                        <p key={com.id}>{com.body}</p>
+                        <>
+                            <p key={com.id}>{com.username}</p>
+                            <p key={com.email}>{com.email}</p>
+                        </>
                     )
                 })
             }
+        </section>
+        {/* Test useLocalSTorage */}
+        <section>
+            <h2>{theme}</h2>
+            <button type="button" onClick={toggleTheme}>Change Theme</button>
         </section>
     </div>
 }

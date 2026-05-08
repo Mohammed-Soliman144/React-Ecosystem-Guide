@@ -1,68 +1,75 @@
-import {useReducer, useEffect, useRef, useCallback} from "react"
 import * as z from "zod"
+import {useReducer, useRef, useCallback, useEffect} from "react"
+
 /**
- * useFetch - handle fetching data from API easily and manage your state
- * @param {string} url - url that fetching data from it
- * @param {extends Omit<RequestInit, 'body'>} options - contains {method: string, headers: Record<string, string>, signal: AbortSignal}
- * @param {T ZodType<T>} schema - schema of data type return from response 
- * @returns {object} - {data, isLoading, error, refetch}
- * @example
- * const {data, isLoading, error, refetch} = useFetch<T>(url: string, options: RequestInit, schema: ZodType<T>)
- */
+ * useFetch - handle fetching data from api easily and manage your state
+ * @param {string} url - url of fetch api as string
+ * @param {extends Omit<RequestInit, 'body'>} options - options of fetch api as object {method: string, headers: object, signal: AbortSignal, body: formAnyType}
+ * @param {T z.zodType<T>} schema - shema of data returned from response (the datatype shape)
+ * @returns {object} - {data: T, isLoading: boolean, error: Error, refetch: () => Promise<void>, abort: ()=> Promise<void>}
+ * const {data, isLoading, error, refetch, abort} = useFetch<T>(url: string, options: FetchOptions, schema: z.ZodType<T>)  
+*/
 
 interface FetchOptions extends Omit<RequestInit, 'body'> {
-    body?: any,
+    body?: any
 }
 
 interface FetchState<T> {
     data: T | null,
     error: Error | null,
-    isLoading: boolean
+    success: boolean | null,
+    isLoading: boolean | null,
+    message: string | null
 }
 
 
-type actionType<T> = 
-    | {type: "PENDING"}
-    | {type: "ERROR", payload: Error}
-    | {type: "SUCCESS", payload: T}
-    | {type: "RESET"}
+type actionType<T> = | {type: "PENDING"} | {type: "ERROR", payload: {error: Error, message: string}} | {type: "SUCCESS", payload: {data: T, message: string}} | {type: "RESET"}
+
 
 function reducer<T>(currentState: FetchState<T>, action: actionType<T>): FetchState<T> {
-    switch(action.type){
-        case "PENDING":
+    switch(action.type) {
+        case "PENDING": 
             return {
                 ...currentState,
+                isLoading: true,
                 data: null,
                 error: null,
-                isLoading: true,
+                success: null,
+                message: null
             }
-        case "ERROR":
+        case "ERROR": 
             return {
                 ...currentState,
+                isLoading: false,
                 data: null,
-                error: action.payload,
-                isLoading: false
+                error: action.payload.error,
+                message: action.payload.message,
+                success: false
             }
         case "SUCCESS": 
             return {
                 ...currentState,
-                data: action.payload,
+                isLoading: false,
+                data: action.payload.data,
+                message: action.payload.message,
                 error: null,
-                isLoading: false
+                success: true
             }
         case "RESET":
             return {
                 data: null,
                 error: null,
-                isLoading: false
+                isLoading: null,
+                success: null,
+                message: null
             }
-        default:
+        default: 
             return currentState
     }
 }
 
 
-function flattenError(error: z.ZodError){
+function flattenErrors(error: z.ZodError): string {
     const flatten = error.issues.reduce((acc, err) => {
         const path = err.path.join(".")
         if(!acc[path])
@@ -70,6 +77,7 @@ function flattenError(error: z.ZodError){
         acc[path].push(err.message)
         return acc
     }, {} as Record<string, string[]>)
+
     return JSON.stringify(flatten)
 }
 
@@ -78,18 +86,28 @@ export function useFetch<T>(url: string, options: FetchOptions, schema: z.ZodTyp
     const [state, dispatch] = useReducer(reducer<T>, {
         data: null,
         error: null,
-        isLoading: false
+        isLoading: null,
+        success: null,
+        message: null
     })
 
     const isMountedRef = useRef(true)
-    const manualController = useRef<AbortController | null>(null)
+    const mannualController = useRef<AbortController | null>(null)
+    // Persist and memorize options object as ref when mounting
     const optionsRef = useRef<FetchOptions>(options)
-
+    // Presist and memorize options object when after rerendering as latest async value of options
     useEffect(()=> {
         optionsRef.current = options
     }, [options])
 
-    const fetchApi = useCallback(async (signal?: AbortSignal) => {
+    // Reset isMountedRef when unmounting (cleanup)
+    useEffect(()=> {
+        return () => {
+            if(isMountedRef.current) isMountedRef.current = false
+        }
+    }, [])
+
+    const fetchData = useCallback(async(signal?: AbortSignal) => {
         if(isMountedRef.current)
             dispatch({type: "PENDING"})
         try {
@@ -99,68 +117,75 @@ export function useFetch<T>(url: string, options: FetchOptions, schema: z.ZodTyp
                     ...optionsRef.current.headers,
                     "content-type": "application/json"
                 },
-                body: typeof optionsRef.current.body !== "string"? JSON.stringify(optionsRef.current.body) : optionsRef.current.body,
-                signal
+                body: optionsRef.current.method !== "GET" && optionsRef.current.body ? typeof optionsRef.current.body !== "string" ? JSON.stringify(optionsRef.current.body) : optionsRef.current.body : undefined,
+                signal,
             })
 
-            if(!response.ok)
-                throw new Error(`HTTP error status code ${response.status} and status text ${response.statusText}`)
-            
-            const rawData = await response.json()
-            
-            const result = schema.safeParse(rawData)
+            if(!response.ok) 
+                throw new Error(`HTTP error - code ${response.status} and text ${response.statusText}`)
 
-            if(!result.success)
-                throw new Error(`Validation Error - ${flattenError(result.error)}`)
+            const rawData = await response.json()
+
+            const validatedData = schema.safeParse(rawData)
+
+            if(!validatedData.success)
+                throw new Error(`Validation error - ${flattenErrors(validatedData.error)}`)
 
             if(isMountedRef.current)
-                dispatch({type: "SUCCESS", payload: result.data})
+                dispatch({type: "SUCCESS", payload: {data: validatedData.data, message: "Successfully fetching data from API"}})
+            return validatedData.data
         } catch(err) {
-            if(err instanceof Error && err.name === "NetworkError") return
-            if(err instanceof z.ZodError)
+            // Network Error and AbortError return (if user cancel request manually or network connection return do not display message for UI)
+            if(err instanceof Error && err.name === "AbortError") return;
+
+            if(err instanceof z.ZodError){
                 if(isMountedRef.current)
-                    dispatch({type: "ERROR", payload: new Error(`ValidationError - ${flattenError(err)}`)})
-            if(err instanceof Error && err.message.includes('HTTP'))
+                    dispatch({type:"ERROR", payload: {error: err, message: `Validation error`}})
+            }
+
+            if(err instanceof Error) {
                 if(isMountedRef.current)
-                    dispatch({type: "ERROR", payload: new Error(`HTTP error ${err}`)})
-            if(err instanceof Error)
-                if(isMountedRef.current)
-                    dispatch({type: "ERROR", payload: err})
+                    dispatch({type: "ERROR", payload: {error: err, message: "Unknown error"}})
+            }
         }
     }, [url, schema])
+
+    // Memorize fetchData by wrapping it inside useCallback 
+    const refetch = useCallback(async() => {
+        // Cancel previous request
+        if(mannualController.current)
+            mannualController.current.abort()
+        const controller = new AbortController()
+        // set Mannual controller
+        mannualController.current = controller
+        // Catch any error if Promise is rejected in silent mode do not crash UI
+        return fetchData(controller.signal).catch(()=> {})
+    }, [fetchData])
 
     useEffect(()=> {
         const autoController = new AbortController()
         if(isMountedRef.current)
-            // Catch error in silent
-            fetchApi(autoController.signal).catch(()=> {})
-            
+            fetchData(autoController.signal).catch(() => {})
         return () => {
             autoController.abort()
-        }
-    }, [fetchApi])
+        }    
+    }, [fetchData])
 
     useEffect(()=> {
         return () => {
-            isMountedRef.current = false
+            if(mannualController.current)
+                mannualController.current?.abort()
         }
     }, [])
 
-    const refetch = useCallback(()=> {
-        if(manualController.current)
-            manualController.current.abort()
-
-        const controller = new AbortController()
-        manualController.current = controller
-        return fetchApi(controller.signal).catch(()=>{})
-    }, [fetchApi])
-
     const abort = useCallback(()=> {
-        return manualController.current?.abort()
+        return mannualController.current?.abort()
     }, [])
+
+
     return {
         ...state,
+        abort,
         refetch,
-        abort
     }
 }
