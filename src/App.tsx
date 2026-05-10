@@ -44,6 +44,8 @@ import { ProductsComponent } from './pages/hook-use-deferred-value/task-2/Produc
 import { FormMainComponent } from './pages/hook-use-id/FormComponent'
 import { ProductsList } from './pages/react-api-use/task-1/ProductList'
 import { TestComponent } from './pages/custom-hook/test/TestComponent'
+import { UsersZustand } from './pages/zustand/components/pages/UsersZustand'
+import { CartZustand } from './pages/zustand/components/pages/CartZustand'
 
 function App({className}: {className: string}) {
   return (
@@ -130,6 +132,10 @@ function App({className}: {className: string}) {
       {/* <ProductsList /> */}
       <div className='w-full h-10 bg-red-500'></div>
       <TestComponent  />
+      <div className='w-full h-10 bg-red-500'></div>
+      <UsersZustand />
+      <div className='w-full h-10 bg-red-500'></div>
+      <CartZustand />
     </div>
     </>
   )
