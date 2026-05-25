@@ -46,11 +46,9 @@
     /* 1- npm install tailwindcss @tailwindcss/vite */
     /* 2- goto vite.config.ts import tailwindcss from "@tailwindcss/vite" */
     /* 3- goto vite.config.ts adds inside plugins: [tailwindcss(),] */
-
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
     }
   },
-  "include": ["src"]
+  "include": ["src", ".react-router/**/*"],
 }
