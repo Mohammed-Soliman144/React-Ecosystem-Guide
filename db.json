@@ -1,0 +1,8 @@
+{
+    "posts": [
+        {"id": 1, "post": "this is awesome post in application programming interface", "date": "5/25/2026"},
+        {"id": 2, "post": "this is awesome post in http and https", "date": "5/25/2026"},
+        {"id": 3, "post": "this is awesome post in react router dom", "date": "5/25/2026"},
+        {"id": 4, "post": "this is awesome post in tanstack/react-query", "date": "5/25/2026"}
+    ]
+}

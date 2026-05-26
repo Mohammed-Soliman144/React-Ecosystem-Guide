@@ -46,6 +46,7 @@ import { ProductsList } from './pages/react-api-use/task-1/ProductList'
 import { TestComponent } from './pages/custom-hook/test/TestComponent'
 import { UsersZustand } from './pages/zustand/components/pages/UsersZustand'
 import { CartZustand } from './pages/zustand/components/pages/CartZustand'
+import { UseEffectPosts } from './react-query/pages/UseEffectPosts'
 
 function App({className}: {className: string}) {
   return (
@@ -136,6 +137,7 @@ function App({className}: {className: string}) {
       <UsersZustand />
       <div className='w-full h-10 bg-red-500'></div>
       <CartZustand />
+      <UseEffectPosts/>
     </div>
     </>
   )
