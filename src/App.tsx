@@ -47,6 +47,7 @@ import { TestComponent } from './pages/custom-hook/test/TestComponent'
 import { UsersZustand } from './pages/zustand/components/pages/UsersZustand'
 import { CartZustand } from './pages/zustand/components/pages/CartZustand'
 import { UseEffectPosts } from './react-query/pages/UseEffectPosts'
+import { UseQueryPosts } from './react-query/pages/UseQueryPosts'
 
 function App({className}: {className: string}) {
   return (
@@ -138,6 +139,7 @@ function App({className}: {className: string}) {
       <div className='w-full h-10 bg-red-500'></div>
       <CartZustand />
       <UseEffectPosts/>
+      <UseQueryPosts />
     </div>
     </>
   )
